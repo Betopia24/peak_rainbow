@@ -20,6 +20,8 @@ def _compress_image_bytes(orig_bytes: bytes, target_bytes: int) -> Optional[byte
 		# Handle animated formats (GIF) - use first frame
 		if hasattr(img, 'is_animated') and img.is_animated:
 			img.seek(0)
+		# HEIF/AVIF may need conversion, ensure we can work with it
+		img.load()
 	except Exception:
 		return None
 
@@ -70,7 +72,7 @@ def _prepare_content(summary: str, details: str, images: List[UploadFile]):
 		}
 	]
 
-	allowed_types = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+	allowed_types = {"image/jpeg", "image/png", "image/gif", "image/webp", "image/heif", "image/heic", "image/avif"}
 
 	for idx, image in enumerate(images, 1):
 		if image.content_type not in allowed_types:
@@ -111,7 +113,8 @@ def _prepare_content(summary: str, details: str, images: List[UploadFile]):
 	content.append({
 		"type": "text",
 		"text": """\n\nBased on the summary, details, and images provided, please:
-1. Identify the service category (e.g., Restaurant, Hotel, Salon, Transportation, Healthcare, Retail, etc.)
+1. Identify the service category. MUST be one of these exact categories:
+   Towing, Car Repairs & Maintenance, Rental Listings, Handyman, Plumbing, Electrical, Carpentry, Concerts, Cleaning Services, Community Events, Food, Food Delivery, Restaurant, Local Markets, Yoga Studios, Gyms, Landlords, Therapists, Car Wash, Tutors
 2. Provide a rating from 1.0 to 5.0 (where 5.0 is excellent). Do not give the fraction rating value. 
 3. Indicate your confidence level (High, Medium, Low)
 4. Create an enhanced, professional version of the user's summary (more detailed and well-written)
@@ -120,7 +123,7 @@ def _prepare_content(summary: str, details: str, images: List[UploadFile]):
 Respond ONLY with a JSON object in this exact format:
 {
 	"category": "category name",
-	"rating": 4.5,
+	"rating": 3,
 	"confidence": "High/Medium/Low",
 	"enhanced_summary": "enhanced professional summary",
 	"enhanced_description": "enhanced comprehensive description"
